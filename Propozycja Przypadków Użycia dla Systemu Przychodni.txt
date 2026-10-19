@@ -1,0 +1,45 @@
+﻿Propozycja Przypadków Użycia dla Systemu Przychodni
+
+
+
+
+1. Rezerwacja Wizyty
+Aktorzy: Pacjent
+Opis: Użytkownik rezerwuje wizytę wybierając odpowiedniego lekarza wraz z jego wolnym slotem czasowym.
+Powiązanie z User Story: Odpowiada drugiej historii użytkownika. (wyszukiwanie / przeglądanie wolnych slotów i planowanie wizyty)
+2. Anulowanie Wizyty
+Aktorzy: Pacjent
+Opis: Pacjent rezygnuje z wcześniej zarezerwowanej wizyty, co skutkuje zmianą jej statusu oraz zwolnieniem zarezerwowanego terminu w kalendarzu.
+Powiązanie z User Story: Odpowiada trzeciej historii użytkownika. (zarządcza/organizacyjna - rezygnacja z terminu)
+3. Wyszukiwanie według specjalizacji 
+Aktorzy: Pacjent
+Opis: Pacjent filtruje listę personelu medycznego po konkretnej specjalizacji (np. kardiolog, internista) w celu zawężenia wyboru przed rezerwacją terminu.
+Powiązanie z User Story: Rozwinięcie drugiej historii użytkownika w zakresie doboru odpowiedniego specjalisty.
+4. Przeprowadzenie wizyty
+Aktorzy: Lekarz, Pacjent
+Opis: Lekarz odbywa wizytę z pacjentem zgodnie z harmonogramem i po jej zakończeniu potwierdza wykonanie usługi, odnotowując realizację w systemie.
+Powiązanie z User Story: Odpowiada piątej historii użytkownika (operacyjna / statusowa - potwierdzenie odbycia się wizyty).
+5. Zapłata za wizytę
+Aktorzy: Pacjent, Lekarz
+Opis: Rozliczenie odbytej wizyty, odnotowanie należności od pacjenta oraz naliczenie wynagrodzenia dla lekarza za przyjętego pacjenta według stawki.
+Powiązanie z User Story: Odpowiada czwartej historii użytkownika. (logika biznesowa - wynagrodzenie lekarza za przyjętego pacjenta)
+6. Wystaw receptę
+
+
+Aktorzy: Lekarz
+
+
+Opis: Podczas odbywającej się wizyty lekarz decyduje się na wystawienie recepty przypisanej do identyfikatora danego pacjenta.
+
+
+Powiązanie z User Story: Odpowiada pierwszej historii użytkownika. (tworzenie/transakcja - wystawianie recepty podczas wizyty)
+
+
+7. Dodaj pozycję do recepty
+Aktorzy: Lekarz
+Opis: Podczas tworzenia recepty lekarz wprowadza pojedynczy lek wraz z jego nazwą handlową oraz schematem dawkowania.
+Powiązanie z User Story: Dopełnia pierwsze user story poprzez wyszczególnienie leków i ich dawkowanie. 
+8. Usuń slot
+Aktorzy: Lekarz
+Opis: Lekarz usuwa dostępny slot, modyfikując przypisany do niego harmonogram..
+Powiązanie z opisem systemu: Zarządzanie harmonogramem pracy personelu i dostępnością gabinetów.
