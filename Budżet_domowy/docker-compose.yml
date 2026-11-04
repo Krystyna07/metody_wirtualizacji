@@ -1,12 +1,12 @@
 services:
   database:
-    image: redis:7.2-alpine
-    container_name: budget_redis
+    image: eqalpha/keydb:latest
+    container_name: budget_keybd
     restart: always
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "keydb-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -17,8 +17,8 @@ services:
     container_name: budget_backend
     restart: always
     environment:
-      - REDIS_HOST=database
-      - REDIS_PORT=6379
+      - KEYBD_HOST=database
+      - KEYBD_PORT=6379
     ports:
       - "8000:8000"
     depends_on:

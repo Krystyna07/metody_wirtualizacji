@@ -4,14 +4,14 @@ import redis
 
 app = FastAPI(
     title="Budzet domowy - backend API",
-    description = "API zarzadzania budzetem domowym z baza Redis",
+    description = "API zarzadzania budzetem domowym z baza KeyBD",
     version = "1.0.0"
 )
 
-REDIS_HOST = os.getenv("REDIS HOST", "database")
-REDIS_PORT = int(os.getenv("REDIS PORT", 6379))
+KEYBD_HOST = os.getenv("KEYBD_HOST", "database")
+KEYBD_PORT = int(os.getenv("KEYBD_PORT", 6379))
 
-r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+r = redis.Redis(host=KEYBD_HOST, port=KEYBD_PORT, decode_responses=True)
 
 @app.get("/")
 def read_root():
