@@ -27,3 +27,25 @@ def read_index(request:Request):
         "index.html",
         {"request": request, "budget": data, "error":error}
     )
+
+
+
+@app.get("/kategorie", response_class=HTMLResponse)
+def read_categories(request: Request):
+    categories_data = []
+    error = None
+    try:
+        
+        resp = requests.get(f"{BACKEND_URL}/api/categories", timeout=3)
+
+        if resp.status_code == 200:
+            categories_data = resp.json()
+        else:
+            error = f"Backend zwrócił kod: {resp.status_code}"
+    except Exception as e:
+        error = f"Brak połączenia z backendem: {str(e)}"
+
+    return templates.TemplateResponse(
+        "categories.html",
+        {"request": request, "categories": categories_data, "error": error}
+    )

@@ -41,6 +41,16 @@ def healthcheck():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Błąd połączenia z bazą: {str(e)}")
 
+
+@app.get("/api/categories")
+def get_categories():
+    return [
+        {"name": "Mieszkanie", "limit": 2000.00, "spent": 1600.00},
+        {"name": "Jedzenie", "limit": 1000.00, "spent": 500.00},
+        {"name": "Rozrywka", "limit": 300.00, "spent": 100.00}
+    ]
+
+
 @app.get("/api/budget/summary")
 def get_budget_summary():
     try:

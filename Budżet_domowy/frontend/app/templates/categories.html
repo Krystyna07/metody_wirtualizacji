@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zarządzanie Kategoriami - Budżet domowy</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background-color: #f7f9fa; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 800px; margin-bottom: 20px; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f0f2f5; }
+        .nav { margin-bottom: 20px; }
+        .nav a { text-decoration: none; color: #0066cc; font-weight: bold; margin-right: 15px; }
+        .nav a:hover { text-decoration: underline; }
+        .badge-ok { color: green; font-weight: bold; }
+        .badge-warning { color: orange; font-weight: bold; }
+        .badge-alert { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">← Powrót do strony głównej</a>
+    </div>
+
+    <div class="card">
+        <h1>Szczegółowy Podział i Limity Kategorii</h1>
+        
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% else %}
+            <p class="success">Moduł szczegółowej analizy kategorii działa poprawnie</p>
+            <table>
+                <tr>
+                    <th>Kategoria</th>
+                    <th>Limit (PLN)</th>
+                    <th>Wydano (PLN)</th>
+                    <th>Pozostało (PLN)</th>
+                    <th>Status</th>
+                </tr>
+                {% for cat in categories %}
+                <tr>
+                    <td><strong>{{ cat.name }}</strong></td>
+                    <td>{{ cat.limit }} zł</td>
+                    <td>{{ cat.spent }} zł</td>
+                    <td>{{ cat.limit - cat.spent }} zł</td>
+                    <td>
+                        {% if cat.spent > cat.limit %}
+                            <span class="badge-alert">Przekroczono!</span>
+                        {% elif cat.spent / cat.limit > 0.8 %}
+                            <span class="badge-warning">Uwaga (80%+)</span>
+                        {% else %}
+                            <span class="badge-ok">W normie</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+</body>
+</html>
