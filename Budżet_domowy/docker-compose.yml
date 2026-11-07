@@ -1,12 +1,16 @@
 services:
   database:
-    image: eqalpha/keydb:latest
-    container_name: budget_keybd
+    image: postgres:15-alpine
+    container_name: budget_postgres
     restart: always
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: budget_db
     ports:
-      - "6379:6379"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "keydb-cli", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U postgres_user -d budget_db"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -17,8 +21,11 @@ services:
     container_name: budget_backend
     restart: always
     environment:
-      - KEYBD_HOST=database
-      - KEYBD_PORT=6379
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USER=postgres_user
+      - DB_PASSWORD=postgres_password
+      - DB_NAME=budget_db
     ports:
       - "8000:8000"
     depends_on:
