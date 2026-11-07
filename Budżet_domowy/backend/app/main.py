@@ -1,6 +1,11 @@
 import os
-from fastapi import FastAPI, HTTPException
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = FastAPI(
     title="Budżet domowy - backend API",
@@ -8,6 +13,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": "Błędne dane wejściowe (walidacja JSON nie powiodła się)", "errors": exc.errors()},
+    )
 
 DB_HOST = os.getenv("DB_HOST", "database")
 DB_PORT = int(os.getenv("DB_PORT", 5432))
@@ -24,6 +35,16 @@ def get_db_connection():
         password=DB_PASSWORD
     )
 
+class TransactionCreate(BaseModel):
+    title: str
+    amount: float
+    category_id: int
+
+class TransactionUpdate(BaseModel):
+    title: Optional[str] = None
+    amount: Optional[float] = None
+    category_id: Optional[int] = None
+
 @app.get("/")
 def read_root():
     return {
@@ -36,6 +57,9 @@ def read_root():
 def healthcheck():
     try:
         conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1;")
+        cur.close()
         conn.close()
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
