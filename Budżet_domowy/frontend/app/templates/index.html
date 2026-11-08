@@ -1,39 +1,84 @@
 <!DOCTYPE html>
-
-<html lang = "pl">
+<html lang="pl">
     <head>
         <meta charset="UTF-8">
-        <title>Budzet domowy</title>
+        <title>Budżet domowy</title>
         <style>
             body { font-family: sans-serif; margin: 40px; background-color: #f7f9fa; }
-            .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
+            .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 750px; }
             .error { color: red; font-weight: bold; }
             .success { color: green; font-weight: bold; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f0f2f5; }
+            .add-form { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+            input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+            button { background-color: #0066cc; color: white; border: none; cursor: pointer; }
+            button.delete-btn { background-color: #cc0000; padding: 5px 10px; }
         </style>
-
     </head>
     <body>
-        <div class = "card">
+        <div class="card">
             <div class="nav" style="margin-bottom: 20px;">
-            <a href="/" style="text-decoration: none; color: #0066cc; font-weight: bold; margin-right: 15px;">Strona główna</a>
-            <a href="/kategorie" style="text-decoration: none; color: #0066cc; font-weight: bold;">Zarządzanie Kategoriami</a>
-        </div>
-            <h1>Budzet domowy</h1>
+                <a href="/" style="text-decoration: none; color: #0066cc; font-weight: bold; margin-right: 15px;">Strona główna</a>
+                <a href="/kategorie" style="text-decoration: none; color: #0066cc; font-weight: bold;">Zarządzanie Kategoriami</a>
+            </div>
+
+            <h1>Budżet domowy</h1>
             {% if error %}
                 <p class="error">{{ error }}</p>
-            {% else %}
-                <p class="success">Polaczenie trojwarstwowe dziala</p>
-                <p><strong>Licznik zapytan z bazy PostgreSQL:</strong>{{ budget.db_views_counter }}</p>
-                <p><strong>Bilans:</strong>{{ budget.balance }} {{ budget.currency }}</p>
+            {% endif %}
+            {% if msg %}
+                <p class="success">{{ msg }}</p>
+            {% endif %}
 
-                <h3>Kategorie:</h3>
+            {% if budget %}
+                <p class="success">Połączenie trójwarstwowe działa</p>
+                <p><strong>Licznik zapytań z bazy PostgreSQL:</strong> {{ budget.db_views_counter }}</p>
+                <p><strong>Przychody:</strong> {{ budget.total_income }} {{ budget.currency }} | <strong>Wydatki:</strong> {{ budget.total_expenses }} {{ budget.currency }}</p>
+                <p><strong>Bilans:</strong> {{ budget.balance }} {{ budget.currency }}</p>
 
+                <h3>Wydatki według kategorii:</h3>
                 <table>
                     <tr><th>Kategoria</th><th>Kwota</th></tr>
                     {% for item in budget.sample_categories %}
-                        <tr><th>{{ item.category }}</th><th>{{ item.amount }} PLN</th></tr>
+                        <tr><td>{{ item.category }}</td><td>{{ item.amount }} PLN</td></tr>
+                    {% endfor %}
+                </table>
+
+                <h3>Dodaj transakcję:</h3>
+                <form class="add-form" method="post" action="/transactions/add">
+                    <input type="text" name="title" placeholder="Tytuł (np. Zakupy)" required>
+                    <input type="number" step="0.01" name="amount" placeholder="Kwota (PLN)" required>
+                    <select name="category_id">
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.type }})</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Dodaj</button>
+                </form>
+
+                <h3>Historia transakcji (z /api/transactions):</h3>
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tytuł</th>
+                        <th>Kategoria</th>
+                        <th>Kwota</th>
+                        <th>Akcja</th>
+                    </tr>
+                    {% for t in transactions %}
+                        <tr>
+                            <td>{{ t.id }}</td>
+                            <td>{{ t.title }}</td>
+                            <td>{{ t.category_name }}</td>
+                            <td>{{ t.amount }} PLN</td>
+                            <td>
+                                <form method="post" action="/transactions/delete/{{ t.id }}" style="margin:0;">
+                                    <button type="submit" class="delete-btn">Usuń</button>
+                                </form>
+                            </td>
+                        </tr>
                     {% endfor %}
                 </table>
             {% endif %}
