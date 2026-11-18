@@ -13,29 +13,25 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8000")
 @app.get("/", response_class=HTMLResponse)
 def read_index(request: Request, msg: str = None, err: str = None):
     data = {}
-    transactions = []
     categories = []
     error = err
     try:
         resp = requests.get(f"{BACKEND_URL}/api/budget/summary", timeout=3)
-        t_resp = requests.get(f"{BACKEND_URL}/api/transactions", timeout=3)
         c_resp = requests.get(f"{BACKEND_URL}/api/categories", timeout=3)
 
-        if resp.status_code == 200 and t_resp.status_code == 200 and c_resp.status_code == 200:
+        if resp.status_code == 200 and c_resp.status_code == 200:
             data = resp.json()
-            transactions = t_resp.json()
             categories = c_resp.json()
         else:
-            error = f"Backend zwrocil blad ({resp.status_code})"
+            error = f"Backend zwrócił błąd ({resp.status_code})"
     except Exception as e:
-        error = f"Brak polaczenia z backendem: {str(e)}"
+        error = f"Brak połączenia z backendem: {str(e)}"
 
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "budget": data,
-            "transactions": transactions,
             "categories": categories,
             "error": error,
             "msg": msg
@@ -43,14 +39,17 @@ def read_index(request: Request, msg: str = None, err: str = None):
     )
 
 @app.get("/kategorie", response_class=HTMLResponse)
-def read_categories(request: Request):
+def read_categories(request: Request, msg: str = None, err: str = None):
     categories_data = []
-    error = None
+    transactions = []
+    error = err
     try:
         resp = requests.get(f"{BACKEND_URL}/api/categories", timeout=3)
-        if resp.status_code == 200:
-
-            categories_data = [c for c in resp.json() if c.get("type") == "expense"]
+        t_resp = requests.get(f"{BACKEND_URL}/api/transactions", timeout=3)
+        
+        if resp.status_code == 200 and t_resp.status_code == 200:
+            categories_data = resp.json()
+            transactions = t_resp.json()
         else:
             error = f"Backend zwrócił kod: {resp.status_code}"
     except Exception as e:
@@ -58,7 +57,13 @@ def read_categories(request: Request):
 
     return templates.TemplateResponse(
         "categories.html",
-        {"request": request, "categories": categories_data, "error": error}
+        {
+            "request": request, 
+            "categories": categories_data, 
+            "transactions": transactions,
+            "error": error,
+            "msg": msg
+        }
     )
 
 @app.post("/transactions/add")
@@ -88,7 +93,9 @@ async def add_transaction(request: Request):
 @app.post("/transactions/delete/{transaction_id}")
 def delete_transaction(transaction_id: int):
     try:
-        requests.delete(f"{BACKEND_URL}/api/transactions/{transaction_id}", timeout=3)
+        resp = requests.delete(f"{BACKEND_URL}/api/transactions/{transaction_id}", timeout=3)
+        if resp.status_code == 200:
+            return RedirectResponse(url="/kategorie?msg=Usunieto+transakcje", status_code=303)
     except Exception:
         pass
-    return RedirectResponse(url="/?msg=Usunieto+transakcje", status_code=303)
+    return RedirectResponse(url="/kategorie?err=Nie udalo sie usunac transakcji", status_code=303)

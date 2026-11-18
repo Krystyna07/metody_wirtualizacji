@@ -17,6 +17,13 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS alerts (
+    id SERIAL PRIMARY KEY,
+    message TEXT NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 INSERT INTO categories (name, type) VALUES
     ('Wynagrodzenie', 'income'),
     ('Mieszkanie', 'expense'),

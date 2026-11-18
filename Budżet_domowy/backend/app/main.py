@@ -1,17 +1,26 @@
 import os
+import json
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import redis
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 app = FastAPI(
     title="Budżet domowy - backend API",
-    description="API zarządzania budżetem domowym z bazą PostgreSQL",
-    version="1.0.0"
+    description="API z pełną obsługą baz danych, Redis, Prometheus, Workerów i Alertów",
+    version="2.0.0"
 )
+
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests', ['method', 'endpoint'])
+
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -45,11 +54,21 @@ class TransactionUpdate(BaseModel):
     amount: Optional[float] = None
     category_id: Optional[int] = None
 
+@app.middleware("http")
+async def prometheus_middleware(request: Request, call_next):
+    REQUEST_COUNT.labels(method=request.method, endpoint=request.url.path).inc()
+    response = await call_next(request)
+    return response
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
 @app.get("/")
 def read_root():
     return {
         "projekt": "Budżet domowy",
-        "status": "API dziala poprawnie",
+        "status": "API dziala poprawnie zbonusami",
         "docs_url": "/docs"
     }
 
@@ -61,9 +80,10 @@ def healthcheck():
         cur.execute("SELECT 1;")
         cur.close()
         conn.close()
-        return {"status": "healthy", "database": "connected"}
+        r.ping() 
+        return {"status": "healthy", "database": "connected", "redis": "connected"}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Błąd połączenia z bazą: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Błąd połączenia z usługami: {str(e)}")
 
 @app.get("/api/categories")
 def get_categories():
@@ -99,6 +119,10 @@ def get_categories():
 
 @app.get("/api/budget/summary")
 def get_budget_summary():
+    cached_summary = r.get("budget_summary_cache")
+    if cached_summary:
+        return json.loads(cached_summary)
+
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -139,7 +163,7 @@ def get_budget_summary():
         cur.close()
         conn.close()
 
-        return {
+        result = {
             "status": "success",
             "db_views_counter": views,
             "currency": "PLN",
@@ -148,9 +172,12 @@ def get_budget_summary():
             "balance": round(total_income - total_expenses, 2),
             "sample_categories": sample_categories
         }
+
+        r.setex("budget_summary_cache", 30, json.dumps(result))
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Błąd bazy danych: {str(e)}")
-    
+
 @app.get("/api/transactions")
 def get_transactions():
     conn = get_db_connection()
@@ -208,53 +235,28 @@ def create_transaction(payload: TransactionCreate):
         RETURNING id, title, float8(amount) AS amount, category_id, created_at;
     """, (payload.title.strip(), payload.amount, payload.category_id))
     new_row = cur.fetchone()
+
+    if payload.amount > 1000.0:
+        cur.execute("""
+            INSERT INTO alerts (message, amount) VALUES (%s, %s);
+        """, (f"Wykryto wysoką transakcję: {payload.title}", payload.amount))
+
     conn.commit()
     cur.close()
     conn.close()
+
+    r.delete("budget_summary_cache")
     return new_row
 
-@app.put("/api/transactions/{transaction_id}")
-def update_transaction(transaction_id: int, payload: TransactionUpdate):
+@app.get("/api/alerts")
+def get_alerts():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    cur.execute("SELECT * FROM transactions WHERE id = %s;", (transaction_id,))
-    existing = cur.fetchone()
-    if not existing:
-        cur.close()
-        conn.close()
-        raise HTTPException(status_code=404, detail=f"Transakcja o ID {transaction_id} nie istnieje")
-
-    new_title = payload.title.strip() if payload.title is not None else existing["title"]
-    new_amount = payload.amount if payload.amount is not None else float(existing["amount"])
-    new_category_id = payload.category_id if payload.category_id is not None else existing["category_id"]
-
-    if not new_title:
-        cur.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Tytuł transakcji nie może być pusty")
-    if new_amount <= 0:
-        cur.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Kwota transakcji musi być większa od 0")
-
-    cur.execute("SELECT id FROM categories WHERE id = %s;", (new_category_id,))
-    if not cur.fetchone():
-        cur.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail=f"Kategoria o ID {new_category_id} nie istnieje")
-
-    cur.execute("""
-        UPDATE transactions
-        SET title = %s, amount = %s, category_id = %s
-        WHERE id = %s
-        RETURNING id, title, float8(amount) AS amount, category_id, created_at;
-    """, (new_title, new_amount, new_category_id, transaction_id))
-    updated = cur.fetchone()
-    conn.commit()
+    cur.execute("SELECT * FROM alerts ORDER BY id DESC;")
+    rows = cur.fetchall()
     cur.close()
     conn.close()
-    return updated
+    return rows
 
 @app.delete("/api/transactions/{transaction_id}")
 def delete_transaction(transaction_id: int):
@@ -268,4 +270,6 @@ def delete_transaction(transaction_id: int):
 
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Transakcja o ID {transaction_id} nie istnieje")
+    
+    r.delete("budget_summary_cache")
     return {"status": "deleted", "id": transaction_id}
