@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Historia zmian transakcji #{{ transaction_id }} - Budżet domowy</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background-color: #f7f9fa; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 900px; }
+        .error { color: red; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f0f2f5; }
+        .nav { margin-bottom: 20px; }
+        .nav a { text-decoration: none; color: #0066cc; font-weight: bold; }
+        .badge { padding: 3px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px; }
+        .badge-CREATE { background-color: #2e7d32; }
+        .badge-UPDATE { background-color: #0277bd; }
+        .badge-DELETE { background-color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/kategorie">← Powrót do zarządzania transakcjami</a>
+    </div>
+
+    <div class="card">
+        <h2>Historia zmian rekordu (Transakcja #{{ transaction_id }})</h2>
+        <p>Audyt operacji: kto i kiedy dodał, zmienił lub usunął rekord.</p>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        {% if history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID wpisu</th>
+                    <th>Akcja</th>
+                    <th>Kto (autor)</th>
+                    <th>Kiedy (data i czas)</th>
+                    <th>Szczegóły zmiany</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in history %}
+                <tr>
+                    <td>{{ entry.id }}</td>
+                    <td><span class="badge badge-{{ entry.action }}">{{ entry.action }}</span></td>
+                    <td><strong>{{ entry.changed_by }}</strong></td>
+                    <td>{{ entry.changed_at }}</td>
+                    <td>{{ entry.details }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% elif not error %}
+            <p>Brak wpisów w historii dla tego rekordu.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
