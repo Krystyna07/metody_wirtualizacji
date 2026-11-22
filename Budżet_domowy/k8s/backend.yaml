@@ -19,26 +19,20 @@ spec:
           ports:
             - containerPort: 8000
           env:
-            - name: POSTGRES_USER
-              value: "postgres_user"
-            - name: POSTGRES_PASSWORD
-              value: "super_secret_db_password_123"
-            - name: POSTGRES_DB
-              value: "budget_db"
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: DB_HOST
+              value: "database"
+            - name: DB_PORT
+              value: "5432"
             - name: DB_USER
               value: "postgres_user"
             - name: DB_PASSWORD
               value: "super_secret_db_password_123"
             - name: DB_NAME
-              value: "budget_db"
-            - name: DB_HOST
-              value: "database"
-            - name: DB_PORT
-              value: "5432"
-            - name: REDIS_HOST
-              value: "redis"
-            - name: BACKEND_URL
-              value: "http://budget-backend:8000"
+              value: "budzet_domowy"
 ---
 apiVersion: v1
 kind: Service
