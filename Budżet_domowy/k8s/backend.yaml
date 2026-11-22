@@ -32,7 +32,7 @@ spec:
             - name: DB_PASSWORD
               value: "super_secret_db_password_123"
             - name: DB_NAME
-              value: "budzet_domowy"
+              value: "budget_db"
 ---
 apiVersion: v1
 kind: Service
