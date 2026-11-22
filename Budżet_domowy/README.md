@@ -75,4 +75,26 @@ backend-3  | [48a2311cb80b] GET /api/alerts
 
 
 
+6. Implementacja projektu w kubernetes.
 
+kind get clusters
+kubectl get pods,svc
+
+$clusters = kind get clusters
+docker ps -a --filter "name=kind"
+
+
+docker ps -a
+docker start <? - docker ps -a>
+kubectl wait --for=condition=Ready pods --all --timeout=120s
+
+kind create cluster
+kubectl apply -f .\k8s\
+kubectl wait --for=condition=Ready pods --all --timeout=120s
+
+
+kubectl port-forward svc/budget-nginx 18080:8080
+
+kubectl get pods,svc
+curl.exe -s http://localhost:18080/health
+1..6 | ForEach-Object { $r = curl.exe -s -i http://localhost:18080/health; ($r -split "`r?`n" | Where-Object { $_ -match "^HTTP/|x-backend-instance:|^\{" }) -join " | " }
