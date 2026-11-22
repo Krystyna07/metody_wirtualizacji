@@ -2,7 +2,7 @@
 <html lang="pl">
     <head>
         <meta charset="UTF-8">
-        <title>Budżet domowy</title>
+        <title>Budżet domowy - Strona główna</title>
         <style>
             body { font-family: sans-serif; margin: 40px; background-color: #f7f9fa; }
             .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 750px; }
@@ -14,19 +14,26 @@
             .add-form { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
             input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
             button { background-color: #0066cc; color: white; border: none; cursor: pointer; }
-            button.delete-btn { background-color: #cc0000; padding: 5px 10px; }
+            .nav a { text-decoration: none; color: #0066cc; font-weight: bold; margin-right: 15px; }
         </style>
     </head>
     <body>
         <div class="card">
             <div class="nav" style="margin-bottom: 20px;">
-                <a href="/" style="text-decoration: none; color: #0066cc; font-weight: bold; margin-right: 15px;">Strona główna</a>
-                <a href="/kategorie" style="text-decoration: none; color: #0066cc; font-weight: bold;">Zarządzanie Kategoriami</a>
+                <a href="/">Strona główna</a>
+                <a href="/kategorie">Zarządzanie Kategoriami i Historia</a>
+                <a href="/alerts" class="btn btn-warning">Zobacz alerty</a>
             </div>
 
             <h1>Budżet domowy</h1>
+            {% if request.query_params.get('err') %}
+                <p class="error">{{ request.query_params.get('err') }}</p>
+            {% endif %}
             {% if error %}
                 <p class="error">{{ error }}</p>
+            {% endif %}
+            {% if request.query_params.get('msg') %}
+                <p class="success">{{ request.query_params.get('msg') }}</p>
             {% endif %}
             {% if msg %}
                 <p class="success">{{ msg }}</p>
@@ -57,30 +64,6 @@
                     </select>
                     <button type="submit">Dodaj</button>
                 </form>
-
-                <h3>Historia transakcji (z /api/transactions):</h3>
-                <table>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tytuł</th>
-                        <th>Kategoria</th>
-                        <th>Kwota</th>
-                        <th>Akcja</th>
-                    </tr>
-                    {% for t in transactions %}
-                        <tr>
-                            <td>{{ t.id }}</td>
-                            <td>{{ t.title }}</td>
-                            <td>{{ t.category_name }}</td>
-                            <td>{{ t.amount }} PLN</td>
-                            <td>
-                                <form method="post" action="/transactions/delete/{{ t.id }}" style="margin:0;">
-                                    <button type="submit" class="delete-btn">Usuń</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
             {% endif %}
         </div>
     </body>

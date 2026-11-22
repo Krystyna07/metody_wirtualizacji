@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: budget-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: budget-worker
+  template:
+    metadata:
+      labels:
+        app: budget-worker
+    spec:
+      containers:
+        - name: worker
+          image: budet_domowy-backend:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-u", "app/worker.py"]
+          env:
+            - name: REDIS_HOST
+              value: "redis"

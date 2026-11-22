@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: budget-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: budget-frontend
+  template:
+    metadata:
+      labels:
+        app: budget-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: budet_domowy-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BACKEND_URL
+              value: "http://budget-backend:8000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: budget-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: budget-frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
