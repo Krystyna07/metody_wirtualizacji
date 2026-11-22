@@ -17,6 +17,7 @@ app = FastAPI(
 )
 
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests', ['method', 'endpoint'])
+INSTANCE_ID = os.getenv("HOSTNAME", "unknown")
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -57,7 +58,9 @@ class TransactionUpdate(BaseModel):
 @app.middleware("http")
 async def prometheus_middleware(request: Request, call_next):
     REQUEST_COUNT.labels(method=request.method, endpoint=request.url.path).inc()
+    print(f"[{INSTANCE_ID}] {request.method} {request.url.path}", flush=True)
     response = await call_next(request)
+    response.headers["X-Backend-Instance"] = INSTANCE_ID
     return response
 
 @app.get("/metrics")

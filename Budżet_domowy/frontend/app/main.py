@@ -66,6 +66,26 @@ def read_categories(request: Request, msg: str = None, err: str = None):
         }
     )
 
+
+@app.get("/alerts")
+def alerts_page(request: Request):
+    error = None
+    try:
+        response = requests.get(f"{BACKEND_URL}/api/alerts", timeout=5)
+        alerts = response.json() if response.status_code == 200 else []
+        if response.status_code != 200:
+            error = f"Błąd API alertów: {response.status_code}"
+    except Exception as e:
+        alerts = []
+        error = f"Błąd połączenia z backendem: {e}"
+
+    return templates.TemplateResponse(
+        "alerts.html",
+        {"request": request, "alerts": alerts, "error": error}
+    )
+
+
+
 @app.post("/transactions/add")
 async def add_transaction(request: Request):
     body = (await request.body()).decode("utf-8")

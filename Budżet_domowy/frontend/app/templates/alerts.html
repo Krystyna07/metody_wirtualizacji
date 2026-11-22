@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Alerty - Budżet domowy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Wykryte anomalie (Alerty)</h2>
+        <a href="/" class="btn btn-secondary">Powrót do strony głównej</a>
+    </div>
+
+    {% if alerts %}
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Komunikat</th>
+                    <th>Kwota (PLN)</th>
+                    <th>Data wykrycia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in alerts %}
+                <tr>
+                    <td>{{ alert.id }}</td>
+                    <td>{{ alert.message }}</td>
+                    <td class="text-danger fw-bold">{{ alert.amount }}</td>
+                    <td>{{ alert.created_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-success">Brak wykrytych anomalii.</div>
+    {% endif %}
+</body>
+</html>

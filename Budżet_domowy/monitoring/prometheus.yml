@@ -4,4 +4,7 @@ global:
 scrape_configs:
   - job_name: 'budget_backend'
     static_configs:
-      - targets: ['backend:8000']
+      - targets:
+          - 'budet_domowy-backend-1:8000'
+          - 'budet_domowy-backend-2:8000'
+          - 'budet_domowy-backend-3:8000'
