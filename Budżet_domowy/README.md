@@ -178,3 +178,32 @@ Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing | Select-Object 
 
 kubectl get pods -l app=budget-frontend
 kubectl logs deploy/budget-frontend --tail=20
+
+
+
+
+..........................................................................
+Wykorzystanie i przepływ danych w formacie JSON w projekcie „Budżet domowy”
+
+W architekturze aplikacji JSON pełni rolę głównego formatu wymiany danych pomiędzy warstwą prezentacji (frontendem) a warstwą logiki biznesowej (backendem REST API) oraz jest wykorzystywany do serializacji danych w pamięci podręcznej Redis.
+
+1. Przepływ danych pomiędzy przeglądarką, frontendem a backendemWarstwa przeglądarki (HTML + Jinja2):
+
+ Użytkownik nie komunikuje się bezpośrednio z API za pomocą żądań asynchronicznych (AJAX/fetch). Szablony HTML (index.html, categories.html, edit_transaction.html, history.html, alerts.html) są renderowane po stronie serwera frontendu przy użyciu silnika szablonów Jinja2, a operacje modyfikacji danych są wysyłane klasycznymi formularzami HTML (application/x-www-form-urlencoded).Warstwa frontendu (FastAPI + requests): Aplikacja frontendowa odbiera dane z formularzy (urllib.parse.parse_qs), konwertuje je do odpowiednich typów (str, float, int) i przesyła do backendu (BACKEND_URL) w formacie JSON za pomocą biblioteki requests:requests.post(..., json=payload) oraz requests.put(..., json=payload) automatycznie serializują słownik Pythona do formatu JSON i ustawiają nagłówek Content-Type: application/json.Odpowiedzi z backendu są deserializowane metodą resp.json() do struktur słownikowych/listowych i przekazywane do szablonów HTML.
+
+
+
+2. Struktura komunikatów JSON w REST API (Backend FastAPI)Dane wejściowe (POST, PUT, PATCH dla /api/transactions):
+
+Walidacja i parsowanie przychodzącego JSON-a realizowane są przez modele Pydantic (TransactionCreate, TransactionPut, TransactionPatch), zawierające pola: title (str), amount (float), category_id (int) oraz opcjonalne changed_by (Optional[str]). W przypadku metody PATCH wszystkie pola są opcjonalne, co umożliwia częściową aktualizację zasobu.Dane wyjściowe (GET oraz odpowiedzi po zapisie/edycji):Endpoint GET /api/budget/summary zwraca zagregowany obiekt JSON zawierający m.in. status, db_views_counter, currency, total_income, total_expenses, balance oraz tablicę obiektów sample_categories.Endpointy GET /api/categories, GET /api/transactions, GET /api/transactions/archived, GET /api/transactions/{id}/history oraz GET /api/alerts zwracają tablice obiektów JSON powstałe z wyników zapytań SQL (RealDictCursor w psycopg2), z jawnym rzutowaniem wartości liczbowych na typy float i int.
+
+
+
+3. Walidacja i obsługa błędów w formacie JSON
+
+W przypadku przesłania niepoprawnej struktury lub błędnych typów danych w ciele żądania JSON, niestandardowy handler wyjątku RequestValidationError zwraca odpowiedź JSONResponse ze statusem HTTP 400 oraz ustandaryzowaną strukturą:{"detail": "Błędne dane wejściowe (walidacja JSON nie powiodła się)", "errors": [...]}.Błędy logiki biznesowej (np. pusta nazwa transakcji, kwota $\le 0$, brak kategorii lub rekordu o podanym ID) zwracane są jako obiekty JSON poprzez HTTPException (400, 404, 500, 503), a frontend odczytuje pole detail z odpowiedzi JSON (resp.json().get("detail")) i prezentuje komunikat użytkownikowi.
+
+
+4. Serializacja JSON w pamięci podręcznej Redis i rola NginxRedis (budget_summary_cache): 
+
+W endpoincie GET /api/budget/summary wynikowy słownik podsumowania jest serializowany do ciągu znaków JSON za pomocą json.dumps(result) i zapisywany w Redisie na 30 sekund (r.setex). Przy kolejnych odczytach w oknie TTL dane są odtwarzane poprzez json.loads(cached_summary) bez obciążania bazy PostgreSQL. Każda modyfikacja transakcji (POST, PUT, PATCH, DELETE) unieważnia klucz w pamięci podręcznej (r.delete("budget_summary_cache")).Nginx (Reverse Proxy): Serwer Nginx przekazuje żądania HTTP oraz nagłówki sieciowe (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto) do usług wewnętrznych bez ingerencji w treść przesyłanych ładunków JSON.
