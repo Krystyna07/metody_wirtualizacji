@@ -8,7 +8,7 @@ import requests
 app = FastAPI(title="Budżet domowy - frontend")
 templates = Jinja2Templates(directory="app/templates")
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
 
 
 @app.get("/", response_class=HTMLResponse)

@@ -98,3 +98,75 @@ kubectl port-forward svc/budget-nginx 18080:8080
 kubectl get pods,svc
 curl.exe -s http://localhost:18080/health
 1..6 | ForEach-Object { $r = curl.exe -s -i http://localhost:18080/health; ($r -split "`r?`n" | Where-Object { $_ -match "^HTTP/|x-backend-instance:|^\{" }) -join " | " }
+
+
+kind get clusters
+docker ps -a --filter "name=kind"
+
+docker start kind-control-plane
+kubectl wait --for=condition=Ready pods --all --timeout=120s
+
+kubectl port-forward svc/budget-nginx 18080:8080
+
+git log -n 2 --oneline
+Get-ChildItem .\k8s
+
+
+kubectl get pods,svc
+
+
+
+curl.exe -s http://localhost:18080/health
+1..6 | ForEach-Object { $r = curl.exe -s -i http://localhost:18080/health; ($r -split "`r?`n" | Where-Object { $_ -match "^HTTP/|x-backend-instance:|^\{" }) -join " | " }
+
+kubectl logs -l app=budget-nginx --tail=8
+
+..........................................................................
+
+where.exe kind
+where.exe kubectl
+Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages" -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "kind|kubectl" }
+
+winget install Kubernetes.kind
+winget install Kubernetes.kubectl
+
+
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+kind version
+
+
+kind create cluster
+kind load docker-image budet_domowy-backend:latest budet_domowy-frontend:latest budet_domowy-worker:latest postgres:15-alpine redis:7-alpine nginx:alpine
+kubectl apply -f .\k8s\
+kubectl wait --for=condition=Ready pods --all --timeout=120s
+
+
+kind load docker-image budet_domowy-backend:latest
+kind load docker-image budet_domowy-frontend:latest
+kind load docker-image budet_domowy-worker:latest
+
+docker save budet_domowy-backend:latest budet_domowy-frontend:latest budet_domowy-worker:latest -o images.tar
+docker exec -i kind-control-plane ctr --namespace=k8s.io images import - < images.tar
+Remove-Item images.tar
+
+
+kubectl wait --for=condition=Ready pods --all --timeout=120s
+kubectl get pods,svc
+
+
+kubectl port-forward svc/budget-nginx 18080:8080
+
+
+curl.exe -s http://localhost:18080/health
+
+
+
+kubectl wait --for=condition=Ready pods --all --timeout=120s
+kubectl get pods,svc
+
+
+kubectl port-forward svc/budget-nginx 18080:8080
+
+
+curl.exe -s http://localhost:18080/health
+1..6 | ForEach-Object { $r = curl.exe -s -i http://localhost:18080/health; ($r -split "`r?`n" | Where-Object { $_ -match "^HTTP/|x-backend-instance:|^\{" }) -join " | " }
