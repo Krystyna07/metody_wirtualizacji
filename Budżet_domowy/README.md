@@ -19,6 +19,11 @@ docker compose ps
     GET budget_summary_cache
 
 
+    kubectl exec -it deploy/redis -- redis-cli
+    TTL budget_summary_cache
+    GET budget_summary_cache
+
+
 2. Druga usługa asynchroniczna (np. Kafka / ZeroMQ) - frontend wysyła do kolejki zapytanie (od razu widzi odpowiedz); worker w "wolnej chwili" zajmuje się obsługą zapytania; ew. odpytywanie o status zapytania
     docker compose logs -f worker
 
@@ -154,10 +159,10 @@ kubectl wait --for=condition=Ready pods --all --timeout=120s
 kubectl get pods,svc
 
 
-kubectl port-forward svc/budget-nginx 18080:8080
+kubectl port-forward svc/budget-nginx 8080:8080
 
 
-curl.exe -s http://localhost:18080/health
+curl.exe -s http://localhost:8080/health
 
 
 
@@ -165,13 +170,13 @@ kubectl wait --for=condition=Ready pods --all --timeout=120s
 kubectl get pods,svc
 
 
-kubectl port-forward svc/budget-nginx 18080:8080
+kubectl port-forward svc/budget-nginx 8080:8080
 
 
 curl.exe -s http://localhost:8080/health
 1..6 | ForEach-Object { $r = curl.exe -s -i http://localhost:8080/health; ($r -split "`r?`n" | Where-Object { $_ -match "^HTTP/|x-backend-instance:|^\{" }) -join " | " }
 
-
+kubectl port-forward svc/budget-frontend 3000:3000
 
 Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing | Select-Object StatusCode, StatusDescription
 
@@ -179,9 +184,65 @@ Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing | Select-Object 
 kubectl get pods -l app=budget-frontend
 kubectl logs deploy/budget-frontend --tail=20
 
+kubectl get configmap
+
+kubectl get pods -o wide
+
+
+kubectl describe pvc postgres-pvc
+kubectl describe configmap postgres-init-sql
 
 
 
+
+
+
+
+
+
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+kubectl scale deployment/budget-backend --replicas=2
+
+
+1..15 | ForEach-Object { Invoke-WebRequest -Uri "http://localhost:3000/" -UseBasicParsing | Out-Null }
+kubectl logs -l app=budget-backend --tail=15 --max-log-requests=5
+
+
+INFO:     10.244.0.4:56102 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/budget/summary
+INFO:     10.244.0.4:56114 - "GET /api/budget/summary HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/categories
+INFO:     10.244.0.4:56130 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/budget/summary
+INFO:     10.244.0.4:56144 - "GET /api/budget/summary HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/categories
+INFO:     10.244.0.4:56154 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/budget/summary
+INFO:     10.244.0.4:56164 - "GET /api/budget/summary HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/categories
+INFO:     10.244.0.4:56180 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-tbq8n] GET /api/categories
+INFO:     10.244.0.4:56206 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     10.244.0.4:55996 - "GET /api/budget/summary HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/categories
+INFO:     10.244.0.4:56002 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/categories
+INFO:     10.244.0.4:56008 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/categories
+INFO:     10.244.0.4:56034 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/budget/summary
+INFO:     10.244.0.4:56050 - "GET /api/budget/summary HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/budget/summary
+INFO:     10.244.0.4:56072 - "GET /api/budget/summary HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/categories
+INFO:     10.244.0.4:56088 - "GET /api/categories HTTP/1.1" 200 OK
+[budget-backend-57448fcdfc-vdz6r] GET /api/budget/summary
+INFO:     10.244.0.4:56192 - "GET /api/budget/summary HTTP/1.1" 200 OK
+PS C:\Users\ad800\OneDrive\Documents\wirtualiz_oddanie\metody_wirtualizacji\Budżet_domowy> 
 ..........................................................................
 Wykorzystanie i przepływ danych w formacie JSON w projekcie „Budżet domowy”
 
